@@ -31,8 +31,8 @@ import pandas as pd
 ALLOWED_EXTENSIONS_MATRIX = {'txt', 'xlsx', 'csv', 'tsv'}
 ALLOWED_EXTENSIONS_ICON = {'svg', 'png', 'jpg', 'jpeg', 'gif'}
 
-# Pre-configured plugins with their MongoDB ObjectIds. These plugins are available by default.
-PRE_CONFIGURED_PLUGINS =  [ObjectId('5f984ac1b478a2c8653ed827'), ObjectId('5f284a560831e4a42a30d698'), ObjectId('5f284bc60831e4a42a30d699'), ObjectId('5fc156db0ccdd1e1e454f116')]
+# Pre-configured plugin IDs. These IDs are kept as strings for frontend/backend consistency.
+PRE_CONFIGURED_PLUGINS = ['5f984ac1b478a2c8653ed827', 'khds8fohoduskfi7syf99', 'ch_01hxz9cbl8z3k0000000000000']
 
 # Define a template for matrix configuration, used in data visualization layouts.
 MATRIX = [
@@ -154,8 +154,10 @@ if __name__ == '__main__':
 # If running not in a container environment, you can use the following line to connect to a local MongoDB install
 #client = MongoClient() #this is for testing on a local machine, when not inside a container
 #When using containers, you need to modify 'sudo vim /etc/mongodb.conf' and add in an additional IP under bind_ip
-# '172.17.0.1' is often the Docker default bridge network gateway, allowing containers to connect to the host.
-client = MongoClient('172.17.0.1', 27017)
+# Use environment-based MongoDB connection settings for portability across environments.
+MONGODB_HOST = os.environ.get('MONGODB_HOST', '172.17.0.1')
+MONGODB_PORT = int(os.environ.get('MONGODB_PORT', 27017))
+client = MongoClient(MONGODB_HOST, MONGODB_PORT)
 # Select the 'micromix' database within MongoDB for storing and retrieving application data.
 db = client.micromix
 # Define collections for storing visualizations and plugins information.
@@ -270,10 +272,13 @@ def df_to_excel(dataframe_dict):
 # Only supports exporting a single dataframe due to the nature of CSV format.
 def df_to_csv(dataframe_dict, seperator):
     # CSV doesn't support multi-sheets, so only one dataframe can be exported.
-    if len(dataframe_dict["filtered"]["df"].index) == 0: # If the dataframe is not filtered, export the unfiltered one.
+    filtered_df = dataframe_dict.get("filtered", {}).get("df")
+
+    if filtered_df is None or len(filtered_df.index) == 0:  # If no filtered dataframe exists, export the unfiltered one.
         df = dataframe_dict["unfiltered"]["df"]
     else:
-        df = dataframe_dict["filtered"]["df"]
+        df = filtered_df
+
     return Response(df.to_csv(sep=seperator, index=False, encoding='utf-8'), mimetype="text/csv", headers={"Content-disposition": "attachment; filename=dataframe.csv"})
 
 

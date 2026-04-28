@@ -1,7 +1,6 @@
 #--------------------------------
 #
-# Heatmap designed by Titus Ebbecke 2021-2022
-# Modifications by Regan Hayward 2023+
+# ClusteredHeatmap backend
 #
 #--------------------------------
 
@@ -17,10 +16,6 @@ from io import BytesIO
 
 
 # MongoDB Connection setup
-# If running not in a container environment, you can use the following line to connect to a local MongoDB install
-#client = MongoClient() #this is for testing on a local machine, when not inside a container
-#When using containers, you need to modify 'sudo vim /etc/mongodb.conf' and add in an additional IP under bind_ip
-# Use environment-based MongoDB connection settings for portability across environments.
 MONGODB_HOST = os.environ.get('MONGODB_HOST', '172.17.0.1')
 MONGODB_PORT = int(os.environ.get('MONGODB_PORT', 27017))
 client = MongoClient(MONGODB_HOST, MONGODB_PORT)
@@ -29,14 +24,6 @@ db = client.micromix
 # Define collections for storing visualizations and plugins information.
 visualizations = db.visualizations
 
-
-# #MongoDB needs to be installed
-# Otherwise, use #client = MongoClient(os.environ.get("testend")) to point to the MongoDB server on the cloud
-
-#client = MongoClient(os.environ.get("testend"))
-#client = MongoClient() # For offline testing.
-#db = client.micromix
-#visualizations = db.visualizations
 
 DEBUG = True
 app = Flask(__name__)
@@ -59,6 +46,10 @@ def status():
 def respond_config():
   #Print the ID to terminal
   print("DB Config=",request.form['url'])
+  # Default response for the empty/landing case (no ?config= parameter from the
+  # frontend). Without this, `data` would be unbound and return Response(...)
+  # below would raise NameError when a caller POSTs url='undefined'.
+  data = '[]'
   #Checking of a URL with DB id has been passed
   if request.form['url'] != 'undefined':
     #id identified and convert to ObjectId object
@@ -73,12 +64,14 @@ def respond_config():
     except:
       #The mockup db_entry stores the empty transformed_dataframe as a list, so don't convert that one.
       #Convert transformed into pandas parquet
-      if type(db_entry['transformed_dataframe']) == bytes: 
+      if type(db_entry['transformed_dataframe']) == bytes:
         data = pd.read_parquet(BytesIO(db_entry['transformed_dataframe'])).to_json(orient='records')
       else:
-        data = db_entry['transformed_dataframe']
-  
-  print("Data successfully passed to heatmap!")
+        # Already a Python list (from the mockup doc); serialize so Response
+        # receives a string, not a list.
+        data = json.dumps(db_entry['transformed_dataframe'])
+
+  print("Data successfully passed to clustered_heatmap!")
   return Response(data, mimetype="application/json")
   
 
@@ -136,6 +129,3 @@ def get_user_settings(db_entry_id):
         response = {"error": "Failed to load settings", "details": str(e)}
         app.logger.error(response)  # Log the error details
         return jsonify(response), 500
-
-
-client.close()

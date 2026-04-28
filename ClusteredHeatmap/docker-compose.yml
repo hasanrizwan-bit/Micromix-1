@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  clustered-heatmap-flask-backend:
+    build: ./backend
+    network_mode: "host"
+    # `network_mode: host` makes the container share the host network, so the
+    # `ports:` block below is ignored at runtime. It is kept as documentation
+    # of the intended host port for the Flask server (see the Dockerfile
+    # CMD which binds to :3001).
+    ports:
+      - "3001:3001" #host:container
+    environment:
+      # Defaults match the Docker bridge gateway on Linux. Override for
+      # Docker Desktop (macOS/Windows) by setting e.g. MONGODB_HOST=host.docker.internal.
+      - MONGODB_HOST=${MONGODB_HOST:-172.17.0.1}
+      - MONGODB_PORT=${MONGODB_PORT:-27017}
+    volumes:
+      - saved_sessions:/app/saved_sessions
+  clustered-heatmap-vue-frontend:
+    build: 
+      context: . 
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8082:80" #host:container
+
+#allow saved sessions to be stored and kept
+#Even when containers are stopped and started
+volumes:
+  saved_sessions:

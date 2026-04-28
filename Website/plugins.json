@@ -11,6 +11,12 @@
             "desc": "2D and 3D heatmap",
             "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/heatmap_hiri_logo.svg",
             "name": "Heatmap"
+        },
+        {
+            "_id": "ch_01hxz9cbl8z3k0000000000000",
+            "desc": "Clustered heatmap with collapsible row dendrograms",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/clustered_heatmap.svg",
+            "name": "ClusteredHeatmap"
         }
     ]
 }

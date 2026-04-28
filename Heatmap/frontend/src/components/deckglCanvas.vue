@@ -76,7 +76,7 @@ export default {
   data() {
     return {
       // Initial data properties including URL, camera settings, layer configurations, etc.
-      backendUrl: 'http://127.0.0.1:3000', // this will need to be changed to where Micromix is hosted
+      backendUrl: process.env.VUE_APP_HEATMAP_BACKEND_URL || 'http://127.0.0.1:3000',
       polygonLayer: null, // Store the PolygonLayer instance
       rectangleText: [],
 
@@ -684,7 +684,7 @@ export default {
     async loadUserSettings() {
       const dbEntryId = this.$route.query.config;
       try {
-        const response = await axios.get(`http://127.0.0.1:3000/get-user-settings/${dbEntryId}`, {
+        const response = await axios.get(`${this.backendUrl}/get-user-settings/${dbEntryId}`, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate', // Prevent caching
             Pragma: 'no-cache', // HTTP 1.0.

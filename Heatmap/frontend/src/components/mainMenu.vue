@@ -200,7 +200,8 @@ export default {
         settings: this.userSettings,
       };
       // send the payload to the backend
-      axios.post('http://127.0.0.1:3000/save-settings', payload)
+      const backendUrl = process.env.VUE_APP_HEATMAP_BACKEND_URL || 'http://127.0.0.1:3000';
+      axios.post(`${backendUrl}/save-settings`, payload)
         .then((response) => {
           console.log('%cSettings saved', 'color: green;', response.data);
           // Save message to appear

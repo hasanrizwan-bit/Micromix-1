@@ -186,18 +186,36 @@ def add_matrix(input_file, metadata, extension, db, pre_configured_plugins):
         # Apply a data transformation if specified in the metadata.
         if metadata['transformation'] != '':
             transformation_type = metadata['transformation']['type']
-            import transform_dataframe
-            for matrix in sum(db_entry['active_matrices'], []):
-                if matrix['id'] == metadata['matrix_id']:
-                    df_old = pd.read_parquet(BytesIO(matrix['dataframe']))
-                    try:
-                        # Attempt to strip titles from the columns of the old DataFrame before transformation.
-                        df_old.rename(columns=lambda title: remove_df_title(title), inplace=True) # Remove the title from the old base df.
-                    except:
-                        print("Error: The old dataframe's columns couldn't be renamed: ", df_old.columns)
-                    break
-            # Perform the transformation and update the DataFrame.
-            df = transform_dataframe.main(transformation_type, metadata, df_old, df)
+            transform_dataframe = None
+            try:
+                import transform_dataframe as transform_dataframe_module
+                transform_dataframe = transform_dataframe_module
+            except ImportError:
+                print("Warning: transform_dataframe module not found. Skipping requested transformation.")
+
+            if transform_dataframe is not None:
+                # `df_old` is only defined if we find the matrix this upload is
+                # replacing. If the matrix is new (no matching id in
+                # active_matrices), there is no previous dataframe to pass to
+                # the transformer and we fall back to running the transform on
+                # `df` alone via df_old=None, which the transform module must
+                # handle.
+                df_old = None
+                for matrix in sum(db_entry['active_matrices'], []):
+                    if matrix['id'] == metadata['matrix_id']:
+                        df_old = pd.read_parquet(BytesIO(matrix['dataframe']))
+                        try:
+                            # Attempt to strip titles from the columns of the old DataFrame before transformation.
+                            df_old.rename(columns=lambda title: remove_df_title(title), inplace=True) # Remove the title from the old base df.
+                        except:
+                            print("Error: The old dataframe's columns couldn't be renamed: ", df_old.columns)
+                        break
+                if df_old is None:
+                    print("Warning: matrix_id", metadata.get('matrix_id'),
+                          "not found in active_matrices; skipping transformation.")
+                else:
+                    # Perform the transformation and update the DataFrame.
+                    df = transform_dataframe.main(transformation_type, metadata, df_old, df)
         # Rename DataFrame columns to include the visualization title.
         df = rename_df_columns(df, metadata["title"])
         # Update the active matrices with the new or transformed DataFrame.
