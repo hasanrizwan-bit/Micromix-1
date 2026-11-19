@@ -1,0 +1,34 @@
+{
+    "plugins": [
+        {
+            "_id": "5f984ac1b478a2c8653ed827",
+            "desc": "Clustered heatmap by the Ma'ayan Laboratory",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/clustergrammer.svg",
+            "name": "Clustergrammer"
+        },
+        {
+            "_id": "khds8fohoduskfi7syf99",
+            "desc": "2D and 3D heatmap",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/heatmap_hiri_logo.svg",
+            "name": "Heatmap"
+        },
+        {
+            "_id": "pc_01hxz9cbl8z3k0000000001",
+            "desc": "Principal Coordinates Analysis",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/pcoa.svg",
+            "name": "PCoA"
+        },
+        {
+            "_id": "ch_01hxz9cbl8z3k0000000000000",
+            "desc": "Clustered heatmap with row/column dendrograms and selection",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/clustered_heatmap.svg",
+            "name": "ClusteredHeatmap"
+        },
+        {
+            "_id": "vp_01hxz9cbl8z3k0000000002",
+            "desc": "Volcano Plot (placeholder)",
+            "image_url": "https://raw.githubusercontent.com/BarquistLab/Micromix/main/Website/backend/plugins/volcano_plot.svg",
+            "name": "VolcanoPlot"
+        }
+    ]
+}

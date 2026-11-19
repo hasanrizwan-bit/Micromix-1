@@ -1,0 +1,247 @@
+{
+  "basicSettings": {
+    "label": "Settings",
+    "id": "generalSettings",
+    "visible": true,
+    "settings": [
+      {
+        "label": "Visual",
+        "inputs": [
+          {
+            "id": "cellSize",
+            "label": "Gap",
+            "type": "range",
+            "min": 0,
+            "max": 2000,
+            "step": 1,
+            "labelCols": 5,
+            "value": 760,
+            "propertyType": "layer"
+          },
+          {
+            "id": "extruded",
+            "label": "3D Extrusion",
+            "type": "checkbox",
+            "labelCols": 6,
+            "value": false,
+            "propertyType": "layer"
+          },
+          {
+            "id": "elevationScale",
+            "label": "Elevation",
+            "type": "range",
+            "min": -100,
+            "max": 1000,
+            "step": 5,
+            "labelCols": 5,
+            "value": 200,
+            "propertyType": "layer",
+            "valueDependencyId": "extruded"
+          },
+          {
+            "id": "opacity",
+            "label": "Opacity",
+            "type": "range",
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "labelCols": 5,
+            "value": 1,
+            "propertyType": "layer"
+          }
+        ]
+      },
+      {
+        "label": "Color Gradient",
+        "inputs": [
+          {
+            "id": "gradientPreset",
+            "label": "Gradient Presets",
+            "type": "dropdownGradient",
+            "labelCols": 6,
+            "propertyType": "gradient",
+            "valueDependencyId": "individualGradients",
+            "condition": false,
+            "value": {
+              "label": "RdYlGn",
+              "value": "RdYlGn",
+              "domain": [0,1,2]
+            },
+            "options": [
+              "BuGn",
+              "BuPu",
+              "GnBu",
+              "OrRd",
+              "PuBu",
+              "PuBuGn",
+              "PuRd",
+              "RdPu",
+              "YlGn",
+              "YlGnBu",
+              "YlOrBr",
+              "YlOrRd",
+              "Blues",
+              "Greens",
+              "Greys",
+              "Oranges",
+              "Purples",
+              "Reds",
+              "BrBG",
+              "PiYG",
+              "PRGn",
+              "PuOr",
+              "RdBu",
+              "RdGy",
+              "RdYlBu",
+              "RdYlGn",
+              "Spectral",
+              "Accent",
+              "Dark2",
+              "Paired",
+              "Pastel1",
+              "Pastel2",
+              "Set1",
+              "Set2",
+              "Set3"
+            ]
+          },
+          {
+            "id": "individualGradients",
+            "label": "Individual Gradients",
+            "type": "checkbox",
+            "labelCols": 6,
+            "value": false,
+            "propertyType": "gradient"
+          }
+        ]
+      }
+    ]
+  },
+  "advancedSettings": {
+    "label": "Advanced Settings",
+    "id": "advancedSettings",
+    "visible": false,
+    "settings": [
+      {
+        "label": "Tooltip",
+        "inputs": [
+          {
+            "id": "pickable",
+            "label": "Show Tooltip",
+            "type": "checkbox",
+            "labelCols": 6,
+            "value": true,
+            "propertyType": "layer"
+          }
+        ]
+      },
+      {
+        "label": "Lighting",
+        "inputs": [
+          {
+            "id": "advancedLighting",
+            "label": "Advanced Lighting",
+            "type": "checkbox",
+            "labelCols": 6,
+            "value": false,
+            "propertyType": "lighting"
+          },
+          {
+            "id": "ambientLight",
+            "label": "Ambient Light",
+            "type": "range",
+            "min": 0,
+            "max": 3,
+            "step": 0.1,
+            "labelCols": 5,
+            "value": 1,
+            "valueDependencyId": "advancedLighting",
+            "propertyType": "lighting"
+          },
+          {
+            "id": "directionalLight1",
+            "label": "Directional Light 1",
+            "type": "range",
+            "min": 0,
+            "max": 2,
+            "step": 0.1,
+            "labelCols": 5,
+            "value": 0.8,
+            "valueDependencyId": "advancedLighting",
+            "propertyType": "lighting"
+          },
+          {
+            "id": "directionalLight2",
+            "label": "Directional Light 2",
+            "type": "range",
+            "min": 0,
+            "max": 2,
+            "step": 0.1,
+            "labelCols": 5,
+            "value": 0.8,
+            "valueDependencyId": "advancedLighting",
+            "propertyType": "lighting"
+          }
+        ]
+      },
+      {
+        "label": "Material",
+        "inputs": [
+          {
+            "id": "material",
+            "label": "Shader Material",
+            "type": "checkbox",
+            "value": true,
+            "selected": true,
+            "propertyType": "layer"
+          },
+          {
+            "id": "advancedMaterial",
+            "label": "Advanced Material",
+            "type": "checkbox",
+            "labelCols": 6,
+            "value": false,
+            "valueDependencyId": "material",
+            "propertyType": "layer"
+          },
+          {
+            "id": "ambientMaterial",
+            "label": "Ambient",
+            "type": "range",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "labelCols": 5,
+            "value": 0.5,
+            "valueDependencyId": "advancedMaterial",
+            "propertyType": "layer"
+          },
+          {
+            "id": "diffuseMaterial",
+            "label": "Diffusion",
+            "type": "range",
+            "min": 0,
+            "max": 1,
+            "step": 0.1,
+            "labelCols": 5,
+            "value": 0.5,
+            "valueDependencyId": "advancedMaterial",
+            "propertyType": "layer"
+          },
+          {
+            "id": "shininess",
+            "label": "Shininess",
+            "type": "range",
+            "min": 0,
+            "max": 1000,
+            "step": 1,
+            "labelCols": 5,
+            "value": 100,
+            "valueDependencyId": "advancedMaterial",
+            "propertyType": "layer"
+          }
+        ]
+      }
+    ]
+  }
+}

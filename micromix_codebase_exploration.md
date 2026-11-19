@@ -1,0 +1,380 @@
+## Micromix Architecture and Data Flow Exploration
+
+### Scope and Method
+- Performed a read-only audit of the `Micromix-1` repository focusing on system architecture, data lifecycle, visualization flow, schemas/state structures, dependencies, and maintainability/extensibility constraints.
+- Analyzed both the main Micromix web app (`Website/`) and the dedicated heatmap service (`Heatmap/`).
+- Referenced concrete files/functions and marked uncertainty where behavior depends on runtime data or uninspected external systems.
+
+---
+
+## 1) High-Level Architecture
+
+Micromix is a multi-service system with two primary application stacks:
+
+1. Main app (`Website/`)
+   - Frontend: Vue 2 SPA (Bootstrap-Vue)
+   - Backend: Flask API with MongoDB persistence
+   - Responsibilities:
+     - Session/config lifecycle
+     - Dataset upload/merge
+     - Transform/filter pipeline
+     - Visualization plugin dispatch
+
+2. Heatmap plugin app (`Heatmap/`)
+   - Frontend: Vue 2 + Deck.gl (WebGL)
+   - Backend: Flask API
+   - Responsibilities:
+     - Load matrix data from main MongoDB session
+     - Transform JSON into Deck.gl layers
+     - Render 2D/3D heatmap with legends/gradients
+     - Persist per-session heatmap UI settings to filesystem JSON
+
+### Runtime topology
+- Main backend targets MongoDB at `172.17.0.1:27017` (`Website/backend/app.py:158`).
+- Heatmap backend also targets same MongoDB host (`Heatmap/backend/app.py:24`).
+- Web app plugin entries currently resolve to local heatmap frontend URL (`Website/backend/plugins/Heatmap.py:2`).
+- Docker compose splits Website and Heatmap into separate frontend/backend services (`Website/docker-compose.yml`, `Heatmap/docker-compose.yml`).
+
+---
+
+## 2) Key Entry Points
+
+### Main app entry points
+- Backend Flask app: `Website/backend/app.py`
+  - Core routes:
+    - `/config` session load/init (`app.py:629`)
+    - `/upload` add/merge datasets (`app.py:713`)
+    - `/matrix/<matrix_id>` remove matrix (`app.py:841`)
+    - `/query` apply transformation/filter query (`app.py:308`)
+    - `/visualization` generate plugin vis link (`app.py:477`)
+    - `/active_plugin` persist selected plugin (`app.py:422`)
+    - `/export` CSV/XLSX export (`app.py:185`)
+    - `/locked` lock session (`app.py:377`)
+- Frontend app shell: `Website/frontend/src/App.vue`
+  - Calls `/config` on startup (`App.vue:433`)
+  - Drives upload modal, query UI, plugin selection, and data table rendering.
+
+### Heatmap entry points
+- Backend Flask app: `Heatmap/backend/app.py`
+  - `/config` loads selected Micromix session data (`app.py:56`)
+  - `/save-settings` writes settings JSON (`app.py:86`)
+  - `/get-user-settings/<db_entry_id>` reads settings JSON (`app.py:114`)
+- Frontend renderer: `Heatmap/frontend/src/components/deckglCanvas.vue`
+  - Fetches `/config`, processes JSON to visual layer objects (`deckglCanvas.vue:1057`, `:1140`)
+
+---
+
+## 3) Data Persistence and Schemas
+
+### MongoDB collections
+- `micromix.visualizations`
+  - Primary session/config store (matrices, transformed data, filtered data, vis links, selected plugin, organism id, lock state).
+- `micromix.plugins`
+  - Plugin metadata store (legacy/dynamic plugin additions).
+
+### Session/document shape (observed)
+- Template object: `DB_ENTRY_MOCKUP` in `Website/backend/app.py:50` includes:
+  - `active_matrices`: nested array of matrix descriptors
+  - `transformed_dataframe`: parquet bytes or list/string form depending lifecycle
+  - `preview_matrices`: matrix layout for upload UI
+  - `vis_links`: generated plugin URLs
+  - `plugins_id`, `active_plugin_id`, `active_organism_id`
+  - optional `filtered_dataframe`, `query`, `locked`
+
+### Matrix object shape
+- Built by `make_single_matrix` (`Website/backend/process_file.py:418`):
+  - `id`, `title`, `x`, `y`, `width`, `height`, `isActive`, `dataframe` (parquet binary)
+
+### Dataframe serialization forms across boundaries
+- Internal DB storage: parquet bytes in BSON Binary (`df_to_parquet` in `process_file.py:263` and `app.py:891`).
+- API response to Website frontend (`/config`): converted to JSON string via `to_json(orient='records')` (`app.py:668-676`).
+- Website frontend normalizes to JS arrays via `JSON.parse` (`App.vue:520-525`).
+- Heatmap backend `/config` returns raw JSON records string (prefers `filtered_dataframe`, fallback `transformed_dataframe`) (`Heatmap/backend/app.py:68-80`).
+
+---
+
+## 4) End-to-End Data Flow (Input -> Transform -> Visualization)
+
+### A) Session bootstrap
+1. Frontend loads `App.vue` and calls `/config` with `config` query param (`App.vue:433-444`).
+2. Backend:
+   - If URL provided: fetches session doc, converts parquet bytes -> JSON strings (`app.py:645-676`).
+   - If undefined: returns mockup template (`app.py:686-698`).
+3. Frontend merges server `db_entry` with local `plugins.json` (`App.vue:474`), then parses dataframes (`App.vue:515-535`).
+
+### B) Data ingest/upload/merge
+1. User submits source (dataset catalog/pasted text/file) in `addDataForm.vue`.
+2. Frontend posts multipart payload to `/upload` with metadata (`addDataForm.vue:293-305`, `:320-360`).
+3. Backend route `/upload` (`app.py:725-746`):
+   - Calls `upload_file` to resolve source (`app.py:772-804`).
+   - Calls `process_file.add_matrix` (`app.py:739`).
+4. `process_file.add_matrix` (`process_file.py:179`):
+   - Converts source to dataframe (`convert_to_df`)
+   - Applies optional matrix-level transformation hook (via `transform_dataframe.main`, uncertainty: module not found in scanned file list)
+   - Renames numeric columns with table title prefix `(title) ...`
+   - Inserts/replaces matrix in `active_matrices`
+   - Re-merges all active matrices via outer join (`merge_db_entry`)
+   - Resets `filtered_dataframe`, `vis_links`, active plugin, sets organism id
+   - Writes back to MongoDB (new row or update)
+5. Frontend receives `db_entry_id` and navigates to updated config.
+
+### C) Query-based transformation + filtering
+1. User composes blocks in `search_query.vue` from organism-specific `filters.json` templates.
+2. Frontend transforms UI query block state into structured query payload (`restructure_query`, `search_query.vue:560-599`) and posts to `/query` (`:653-666`).
+3. Backend `/query` (`app.py:319-367`):
+   - Loads `transformed_dataframe` parquet from session.
+   - Runs `filter_dataframe.main(query, df)`.
+   - Stores `filtered_dataframe` parquet + `query`, clears `vis_links`.
+4. `filter_dataframe.main` pipeline (`filter_dataframe.py:26-159`):
+   - Step 1 transformations via `initial_transformation.transform_df`
+   - Step 2 gene/annotation filtering via `filter_genelists.filter_genelists`
+   - Step 3 row value filters via `row_filters.row_filters`
+
+### D) Visualization dispatch (plugin model)
+1. User selects plugin card in `App.vue`.
+2. Frontend posts `/visualization` with selected plugin metadata + config id (`App.vue:403-410`).
+3. Backend `/visualization` (`app.py:492-529`):
+   - Selects `filtered_dataframe` if present, else `transformed_dataframe`.
+   - Calls `visualize.route(...)`.
+4. `visualize.route` dynamically imports plugin module by name (`visualize.py:28`) and calls `plugin.main({df, db_entry_id})`.
+5. Plugin outputs URL string stored into `vis_links` and returned.
+6. Frontend loads URL in iframe (`visualization.vue:3`).
+
+### E) Heatmap plugin data/render flow
+1. Heatmap URL contains `?config=<db_id>` from `Website/backend/plugins/Heatmap.py:5`.
+2. `deckglCanvas.vue` fetches heatmap backend `/config` with `url=config` (`deckglCanvas.vue:1057-1085`).
+3. Heatmap backend loads session from MongoDB and returns filtered/transformed dataframe JSON (`Heatmap/backend/app.py:67-80`).
+4. Frontend `processJsonData` transforms row/column/value records into Deck.gl:
+   - GridCellLayer data (numeric values)
+   - TextLayer data (non-numeric cells, row headers, column headers)
+   - Subtable detection by column prefix pattern `(table) column`
+   - Per-subtable min/max tracking for gradients (`deckglCanvas.vue:1140-1284`)
+5. Rendering + interactions:
+   - Color scale in `colorGradientDict`
+   - Optional negative value orientation handling (`configureNegativeValues`, `:1290`)
+   - Legends and per-table gradient overlays (`:339`, `:413`, `:1301`)
+6. User settings persisted to disk via `/save-settings` and reloaded conditionally by content hash (`deckglCanvas.vue:684-714`, `mainMenu.vue:195-203`).
+
+---
+
+## 5) State Structures and Transformation Contracts
+
+### Frontend global-ish state (`Website/frontend/src/App.vue`)
+- `config`: merged object of server session + local plugin descriptors.
+- `active_plugin_id`, `active_vis_link`, `filtered`, `error`, loading state.
+- Implicit contract: server may return dataframes as JSON strings, frontend must parse.
+
+### Query model (UI -> backend)
+- UI query is nested arrays of block objects.
+- `restructure_query` emits backend format:
+  - `name`, `properties`, `id`, `logic`, `inline_coordinates`, `forms`.
+- Backend transformation/filter code assumes specific literal names from filter templates (e.g. `Round Values`, `Filter values`, operator labels).
+
+### Column naming contract
+- Numeric columns from each uploaded matrix are prefixed as `(Title) col` (`rename_df_columns`, `process_file.py:135-139`).
+- Many downstream behaviors detect table splits based on this prefix format:
+  - Clustergrammer plugin (`plugins/Clustergrammer.py:29-31`)
+  - Heatmap subtable parsing (`deckglCanvas.vue:1174-1187`)
+  - Fold-change target table logic (`initial_transformation.setup_query_parameters`)
+
+This contract is central but informal (string convention, not schema-enforced).
+
+---
+
+## 6) Visualization Logic and Dependencies
+
+### Plugin architecture
+- Dynamic import by plugin name (`visualize.py:28`), no explicit plugin interface validation.
+- Current bundled plugin sources:
+  - `Heatmap.py`: returns local URL with config query
+  - `Clustergrammer.py`: pushes TSV to external service and returns remote URL
+
+### Heatmap rendering stack
+- Deck.gl layers: `GridCellLayer`, `TextLayer`, `PolygonLayer`, `LineLayer`.
+- Color logic:
+  - per-table gradient dictionaries (`colorGradientDict[table]`)
+  - optional individual gradients or shared gradient.
+- Data shaping done in frontend JS, not backend Python.
+
+### Dependency highlights
+- Backend: Flask, pandas, pyarrow, pymongo 3.12.1, scipy/statsmodels, requests.
+- Main frontend: Vue 2 + Bootstrap-Vue + axios.
+- Heatmap frontend: Vue 2 + deck.gl + chroma-js + CryptoJS.
+
+---
+
+## 7) Bugs / Weak Points (Concrete)
+
+1. Mixed/legacy router files in Website frontend
+- `Website/frontend/src/main.js` imports `./router` (directory), while `src/router/index.js` uses Vue 3 API (`createRouter`) incompatible with Vue 2 dependencies, and `src/router.js` defines Vue 2 router actually used by app shape.
+- Risk: wrong import resolution or latent breakage during build/upgrade.
+- Files: `Website/frontend/src/main.js`, `Website/frontend/src/router/index.js`, `Website/frontend/src/router.js`.
+
+2. CSV export can crash when no filtered dataframe exists
+- `df_to_csv` unconditionally reads `dataframe_dict["filtered"]["df"]` (`app.py:273`) even though `filtered` key may be absent (it is set in a try/except in `export_df`).
+- Expected KeyError path likely reachable for unfiltered sessions.
+- File: `Website/backend/app.py:210-217`, `:271-277`.
+
+3. Hardcoded local service URLs and host assumptions
+- Main frontend backend URL hardcoded to `http://127.0.0.1:5000` (`App.vue:224`).
+- Heatmap plugin URL hardcoded to `http://127.0.0.1:8081/` (`plugins/Heatmap.py:2`).
+- Heatmap frontend backend hardcoded to `http://127.0.0.1:3000` (`deckglCanvas.vue:79`).
+- MongoDB host hardcoded `172.17.0.1` in both backends.
+- Reduces portability and multi-environment deployability.
+
+4. Potential missing module reference during matrix add/transform
+- `process_file.add_matrix` imports `transform_dataframe` (`process_file.py:189`) but scanned backend file set does not include `transform_dataframe.py`.
+- Uncertainty: may exist outside scanned patterns or removed accidentally.
+- If absent at runtime and metadata transformation is requested, this path fails.
+
+5. Plugin identity mismatch between ObjectId and string IDs
+- `plugins.json` includes `_id` strings, including non-ObjectId `khds8fo...` for Heatmap.
+- Backend stores preconfigured plugin IDs as `ObjectId(...)` constants and historically uses `plugins_id` from DB.
+- Current frontend overlays local `plugins.json` onto `config`, masking mismatch but coupling is fragile.
+- Files: `Website/plugins.json`, `Website/backend/app.py:35`, `Website/frontend/src/App.vue:474`.
+
+6. Dataframe parsing and null-unsafe table operations
+- `dataframe.vue` assumes `this.items[0]` exists in `create_table_headers` (`dataframe.vue:141`).
+- Can fail on empty filtered results or empty data states.
+
+7. Query/filter architecture coupled to UI display labels
+- Backend transformation detection relies on user-facing names like `"Round Values"` (`filter_dataframe.py:37-43`).
+- Renaming UI text can silently break backend behavior.
+
+8. File upload/static serving path concerns
+- Main backend sets `UPLOAD_FOLDER = '/static'` absolute root (`app.py:144`), while data-source db files are loaded from relative `static/<filename>` (`app.py:798`).
+- Plugin icon upload writes to `/Users/` (`app.py:577`), likely incorrect for containers and unsafe.
+
+9. Performance bottleneck in matrix merge pipeline
+- `merge_db_entry` repeatedly merges all active matrices with outer joins every add/remove (`process_file.py:240-247`).
+- Comment acknowledges poor performance and full rebuild strategy.
+- Likely scales poorly with many matrices/columns.
+
+10. Heatmap frontend complexity and mutation-heavy settings template usage
+- `createSubTableGradientForms` mutates `settingsTemplate` by pushing dynamic forms (`deckglCanvas.vue:1324`), potentially causing duplication across lifecycles/hot reloads.
+- Very large single component (`1437` lines) mixes fetch, transform, rendering, settings, persistence.
+
+11. Over-broad CORS and debug settings in production path
+- Main backend uses wildcard CORS and debug enabled (`app.py:141`, `:130`, `:139-140`).
+- Heatmap backend also debug-enabled pattern.
+
+12. External visualization dependency risk (Clustergrammer)
+- Clustergrammer plugin depends on third-party remote endpoint `https://amp.pharm.mssm.edu/clustergrammer/matrix_upload/`.
+- Service availability/network errors directly affect visualization generation.
+
+---
+
+## 8) Maintainability and Extensibility Risks
+
+### Tight coupling points
+- Query semantics are coupled across:
+  - organism JSON templates (`filters.json`),
+  - frontend `search_query.vue`,
+  - backend string matching in filter/transformation modules.
+- Table identity is encoded in column name prefixes, not structured metadata.
+- Multiple representations for the same session payload (parquet bytes, JSON strings, arrays) increase edge cases.
+
+### Code structure concerns
+- Monolithic files:
+  - `Website/backend/app.py` (~900 lines)
+  - `Heatmap/frontend/src/components/deckglCanvas.vue` (~1400 lines)
+- Duplicated utility logic (`df_to_parquet` in multiple files).
+- Inconsistent router artifacts and possible dead code.
+
+---
+
+## 9) Multi-Strain / Multi-Dataset-at-Once: Current Behavior and Gaps
+
+### What exists now
+- System supports multiple uploaded matrices and merges them into one transformed dataframe (`process_file.add_matrix`, `merge_db_entry`).
+- Matrix placement UI allows replacing/removing matrix tiles (`matrix.vue`, `process_file.make_active_matrix/remove_matrix`).
+- Subtables recognized through `(Title)` prefix convention, used by heatmap for per-table legend/gradient.
+
+### Gaps for robust multi-strain support
+- No explicit first-class schema for `strain`, `dataset`, or `sample group`; relies on title-derived prefixes.
+- Annotation filtering (`gene_annotations.json`) appears single static mapping, not namespace-isolated per organism/strain.
+- Organism selection is single active organism ID in config (`active_organism_id`), not multi-organism session model.
+- Query UI behavior disables some dropdowns when filters exist (`search_query.vue:isDropdownDisabled`), limiting complex mixed-query composition.
+- Export and plugin pipelines treat merged data monolithically; limited explicit provenance tracking per source matrix.
+
+---
+
+## 10) Recommendations (Prioritized)
+
+### P0: Correctness / reliability
+1. Fix router inconsistency and remove Vue 3 router artifact from Vue 2 app.
+2. Harden `/export` CSV path to handle absent filtered dataframe safely.
+3. Validate and centralize plugin ID/type handling (ObjectId vs string) with explicit schema.
+4. Replace hardcoded URLs/hosts with environment configuration across all apps.
+5. Confirm and repair `transform_dataframe` dependency path or remove dead import path.
+
+### P1: Data contracts and extensibility
+1. Introduce explicit typed session schema (e.g., Pydantic/dataclass validation) for:
+   - matrices
+n   - dataframe payload references
+   - query blocks
+   - plugin descriptors
+2. Replace column-prefix table identity with structured metadata fields:
+   - source table id
+   - source title
+   - strain/organism id
+   - sample condition metadata
+3. Store matrix provenance explicitly and propagate to visualization backends.
+
+### P2: Multi-strain/multi-dataset support
+1. Extend config model to support multiple active organisms/strains per session.
+2. Make annotation lookup organism-aware and namespace-specific (not single global `gene_annotations.json`).
+3. Add conflict-safe merge policies (join keys, collision resolution, typed key matching).
+4. Provide source-aware filtering (filter by dataset/strain first, then expression/annotation).
+
+### P3: Performance and maintainability
+1. Refactor `process_file.merge_db_entry` to incremental updates instead of full outer-join rebuild.
+2. Move heavy heatmap JSON->layer transformation partly to backend where appropriate.
+3. Split `deckglCanvas.vue` into composables/modules:
+   - data fetch/normalize
+   - layer builders
+   - gradient/legend manager
+   - settings persistence
+4. Standardize serialization boundary (single canonical API format) to remove string/array duality.
+5. Add integration tests for critical flows:
+   - upload -> config -> query -> visualize
+   - empty filtered dataframe export
+   - session lock behavior
+
+### Security and ops
+1. Restrict CORS origins and disable debug in production defaults.
+2. Fix plugin icon upload pathing and enforce secure storage locations.
+3. Add timeout/retry and error messaging around external Clustergrammer dependency.
+
+---
+
+## 11) Notable Uncertainties
+
+- `transform_dataframe` module resolution is uncertain because `process_file.py` imports it, but corresponding file was not found in scanned backend paths.
+- Actual MongoDB document shapes in production may include additional fields beyond observed templates and code assumptions.
+- Some files appear legacy or transitional (e.g., `router/index.js` with Vue 3 API), and runtime behavior depends on bundler resolution and current build setup.
+- `datasets.json` and `gene_annotations.json` are very large; this audit sampled structures and usage patterns, not exhaustive semantic validation of all entries.
+
+---
+
+## 12) Concrete File Reference Index
+
+- Main backend API + session lifecycle: `Website/backend/app.py`
+- Matrix ingest/merge/parquet conversion: `Website/backend/process_file.py`
+- Query pipeline orchestrator: `Website/backend/filter_dataframe.py`
+- Transformation engine: `Website/backend/initial_transformation.py`
+- Gene/annotation filters: `Website/backend/filter_genelists.py`
+- Row filters: `Website/backend/row_filters.py`
+- Plugin router: `Website/backend/visualize.py`
+- Plugins: `Website/backend/plugins/Heatmap.py`, `Website/backend/plugins/Clustergrammer.py`
+- Frontend shell/session management: `Website/frontend/src/App.vue`
+- Upload form and source handling: `Website/frontend/src/components/addDataForm.vue`
+- Query builder UI: `Website/frontend/src/components/search_query.vue`
+- Data table renderer: `Website/frontend/src/components/dataframe.vue`
+- Heatmap backend API: `Heatmap/backend/app.py`
+- Heatmap renderer and data shaping: `Heatmap/frontend/src/components/deckglCanvas.vue`
+- Heatmap settings persistence trigger: `Heatmap/frontend/src/components/mainMenu.vue`
+- Organism and dataset metadata: `Website/frontend/src/assets/json/organisms.json`, `Website/frontend/src/assets/json/datasets.json`
+- Filter templates: `Website/frontend/src/assets/organisms/default/filters.json`
+- Annotation mapping: `Website/backend/static/gene_annotations.json`
+- Container topology: `Website/docker-compose.yml`, `Heatmap/docker-compose.yml`

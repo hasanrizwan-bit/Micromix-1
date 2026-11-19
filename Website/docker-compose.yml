@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  micromix-flask-backend:
+    build: ./backend
+    network_mode: "host"
+    environment:
+      # In Docker with host networking, MongoDB runs on the host and is reached
+      # via the Docker bridge gateway (172.17.0.1 on Linux). Override this to
+      # match your environment (e.g. a "mongo" service name or a remote host).
+      # Local non-Docker development does not use this file and defaults to
+      # mongodb://localhost:27017/ in app.py.
+      - MONGO_URI=${MONGO_URI:-mongodb://172.17.0.1:27017/}
+      # UniProt annotation files live outside the ./backend build context,
+      # so mount them read-only and point the annotation service at them.
+      - MICROMIX_ANNOTATION_DIR=/annotation
+    volumes:
+      - ./annotation:/annotation:ro
+    ports:
+      - "5000:5000" #host:container
+  micromix-vue-frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "7000:80" #host:container
+

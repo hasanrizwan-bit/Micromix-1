@@ -1,0 +1,46 @@
+{
+  "name": "hiri_heatmap",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --fix --host 127.0.0.1 --port 8081",
+    "prebuild": "npx update-browserslist-db@latest",
+    "build": "vue-cli-service build --fix",
+    "lint": "vue-cli-service lint --fix"
+  },
+  "eslintConfig": {
+    "rules": {
+      "max-len": "off"
+    }
+  },
+  "dependencies": {
+    "@deck.gl/core": "^8.3.6",
+    "@deck.gl/layers": "^8.3.6",
+    "axios": "^1.2.2",
+    "bootstrap": "^4.5.2",
+    "bootstrap-vue": "^2.17.3",
+    "chroma-js": "^2.1.0",
+    "core-js": "^3.8.3",
+    "deck.gl": "^8.3.6",
+    "vue": "^2.6.14",
+    "vue-router": "^3.1.6",
+    "vue-slider-component": "^3.2.11",
+    "crypto-js": "^4.1.1"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "^5.0.8",
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-service": "^5.0.0",
+    "@vue/eslint-config-standard": "^5.1.2",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-vue": "^9.9.0",
+    "vue-template-compiler": "^2.6.14"
+  }
+}

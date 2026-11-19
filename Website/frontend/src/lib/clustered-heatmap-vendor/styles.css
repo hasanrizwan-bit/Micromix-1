@@ -1,0 +1,388 @@
+/* Clustered Heat Map Tool — vendored styles (Micromix integration)
+ *
+ * This is a TRIMMED, otherwise verbatim copy of the reference
+ * implementation's styles.css (ClusteredHeatmap2/backend/static/css/styles.css):
+ * every rule below has the SAME selector and SAME property values as the
+ * reference. Only rules for parts of the reference page Micromix does not
+ * embed (the page chrome: `.site-header`, `.panel`, `.container`, the
+ * Load/health-check buttons, the PCoA/Volcano pages, ...) were removed, and
+ * the universal `*` / `html, body` reset was dropped -- this file is loaded
+ * as a GLOBAL (non-scoped) stylesheet inside a Vue SPA (the vanilla-JS
+ * renderer below creates plain DOM nodes outside Vue's scoped-CSS
+ * mechanism), so keeping page-chrome-wide selectors here would leak into
+ * the rest of Micromix. Every selector that remains is specific to the
+ * clustered heat map's own markup and does not collide with Micromix's
+ * other styles (Bootstrap-Vue, PCoA, ...).
+ *
+ * See frontend/src/lib/clustered-heatmap-vendor/main.js for the renderer
+ * that creates the elements these rules style, and
+ * frontend/src/components/clustered-heatmap/NativeClusteredHeatmapCanvas.vue
+ * for the host component. */
+
+.heatmap-status {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4a5568;
+  background: #eef1f5;
+  border: 1px solid #e3e6eb;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  line-height: 1.4;
+}
+
+.heatmap-status:empty {
+  display: none;
+}
+
+.heatmap-status.is-ok {
+  color: #1f7a3a;
+  background: #eaf6ee;
+  border-color: #cfe9d8;
+}
+
+.heatmap-status.is-error {
+  color: #b3261e;
+  background: #fdeceb;
+  border-color: #f5cfcc;
+}
+
+.heatmap-title {
+  margin: 0.25rem 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  min-height: 1.25rem;
+}
+
+.heatmap-container {
+  width: 100%;
+  /* Allow scrolling in both directions: large clustered datasets (with
+   * dendrograms beside them) can easily exceed the viewport. Bounding the
+   * height and scrolling INSIDE this box (rather than letting the card
+   * endlessly grow the page) is what lets large matrices stay readable
+   * instead of being squeezed down to fit. */
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+  /* Center the clustered heat map card within its panel. */
+  display: flex;
+  justify-content: center;
+}
+
+.heatmap-placeholder {
+  height: 240px;
+  border: 2px dashed #c4c9d2;
+  border-radius: 6px;
+  background: #fafbfc;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-style: italic;
+}
+
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+  background: #e3e6eb;
+  padding: 2px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  /* grid-template-columns is set inline by the renderer based on column count */
+}
+
+.heatmap-corner {
+  background: #ffffff;
+}
+
+.heatmap-col-label {
+  background: #ffffff;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.heatmap-row-label {
+  background: #ffffff;
+  padding: 0.35rem 0.6rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.heatmap-cell {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #222;
+  cursor: default;
+}
+
+.heatmap-cell:hover {
+  outline: 2px solid #2f6feb;
+  outline-offset: -2px;
+}
+
+/* ---------- Clustered heat map (with dendrograms) ----------------------
+ *
+ * The clustered renderer builds a 3-column / 3-row CSS grid:
+ *
+ *   ┌──────────┬─────────────────────┬───────────┐
+ *   │          │  Column dendrogram  │           │
+ *   ├──────────┼─────────────────────┼───────────┤
+ *   │ Row      │                     │ Row       │
+ *   │ dendro   │  Heat map cells     │ labels    │
+ *   ├──────────┼─────────────────────┼───────────┤
+ *   │          │  Column labels      │           │
+ *   └──────────┴─────────────────────┴───────────┘
+ *
+ * The heat map cells use fixed pixel dimensions so the dendrogram
+ * leaves can be placed at the *exact* same x/y coordinates as the heat
+ * map cells they correspond to. */
+
+.clustered-heatmap {
+  display: grid;
+  /* grid-template-columns / -rows are set inline by the renderer. The heat
+   * map plotting area is a FIXED size, so the whole card stays the same
+   * footprint before and after collapsing rows/columns. */
+  gap: 0;
+  /* width: max-content keeps the grid sized to its contents so the parent
+   * .heatmap-container can scroll for very large strips instead of
+   * squashing the cells. */
+  width: max-content;
+  background: #ffffff;
+  border: 1px solid #e3e6eb;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.clustered-corner {
+  background: #ffffff;
+}
+
+.dendrogram-col-cell {
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.dendrogram-row-cell {
+  background: #ffffff;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.dendrogram-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8a93a3;
+  text-align: center;
+  padding: 0 0 4px 0;
+}
+
+/* The row dendrogram label sits to the *left* of the SVG and is rotated
+ * so it reads bottom-to-top, matching the row axis. ``writing-mode``
+ * gives us that without needing transforms. */
+.dendrogram-label.dendrogram-label-row {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding: 0 2px 0 0;
+  align-self: center;
+}
+
+.dendrogram {
+  display: block;
+}
+
+.dendrogram-branch {
+  fill: none;
+  stroke: #444;
+  stroke-width: 1;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* A wide, transparent polyline drawn on top of each visible branch so the
+ * whole U-shape is an easy click target even though the line is only 1px.
+ * `pointer-events: stroke` makes only the (fat) stroke clickable, not the
+ * empty interior of the U. */
+.dendrogram-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+/* Hover feedback: darken the underlying branch when the hit area beneath
+ * the cursor is hovered. */
+.dendrogram-hit:hover {
+  stroke: rgba(47, 111, 235, 0.18);
+}
+
+/* A branch whose cluster is currently collapsed is drawn thicker and in
+ * the accent color so users can see which node is collapsed. */
+.dendrogram-branch.is-collapsed {
+  stroke: #2f6feb;
+  stroke-width: 2.5;
+}
+
+/* The explicit TERMINAL branch drawn for a collapsed cluster. It is a real
+ * visible leaf stub ending at the collapsed row's yCenter / collapsed
+ * column's xCenter. Rounded caps make the short stub read clearly as a
+ * terminal leaf rather than a clipped line. */
+.dendrogram-branch.dendrogram-terminal {
+  stroke: #2f6feb;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+/* Cells that belong to a collapsed summary row/column get a subtle dashed
+ * outline so the averaged summary stands out from raw cells. */
+.clustered-cells .heatmap-cell.is-collapsed-cell {
+  outline: 2px dashed #2f6feb;
+  outline-offset: -2px;
+}
+
+/* A collapsed row/column label is an expand control. Styled cleanly
+ * (accent color + dotted underline) so it reads as part of the UI rather
+ * than debug text. The underline lives on the text node so it follows
+ * rotated column labels too. */
+.is-collapsed-label {
+  cursor: pointer;
+}
+
+.clustered-row-label.is-collapsed-label {
+  color: #2f6feb;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.is-collapsed-label-text {
+  color: #2f6feb;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.is-collapsed-label:hover,
+.is-collapsed-label:focus {
+  color: #2558c4;
+  outline: none;
+}
+
+.is-collapsed-label:focus-visible {
+  outline: 2px solid #2f6feb;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+.clustered-cells {
+  display: grid;
+  gap: 0;
+  background: #e3e6eb;
+  /* No CSS gap or per-cell borders here on purpose: dendrogram leaves
+   * are positioned in absolute pixel coordinates that assume each cell
+   * occupies *exactly* CELL_W x CELL_H pixels, so any gap or border
+   * would shift the cell centers off the dendrogram leaves. We use
+   * ``outline`` below (which doesn't take up layout space) to give
+   * each cell a thin separator. */
+}
+
+.clustered-cells .heatmap-cell {
+  min-height: 0; /* override the responsive 32px min-height; size comes from grid */
+  /* Outline overlaps adjacent cells by 0.5px on each side rather than
+   * pushing them apart, so cell centers stay at the exact pixel
+   * positions the dendrograms expect. */
+  outline: 1px solid #e3e6eb;
+  outline-offset: -1px;
+}
+
+/* Dense matrices (many small cells, flagged by main.js when cell size hits
+ * its readable floor) drop the per-cell outline so the expression pattern
+ * reads as a continuous block of color instead of hundreds of separated
+ * boxes. Cell positions/sizes are unaffected -- outline never took layout
+ * space to begin with. */
+.clustered-cells.is-dense .heatmap-cell {
+  outline: none;
+}
+
+.clustered-cells.is-dense .heatmap-cell.is-collapsed-cell {
+  /* Keep the collapsed-cell indicator visible even in dense mode, just
+   * thinner so it doesn't dominate a small cell. */
+  outline: 1px dashed #2f6feb;
+  outline-offset: -1px;
+}
+
+.clustered-row-labels {
+  display: grid;
+  gap: 0;
+  background: #ffffff;
+  padding-left: 8px;
+}
+
+.clustered-row-label {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: #344054;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Keep labels off the cells so they never overlap the heat map. */
+  padding-right: 4px;
+}
+
+/* Adaptive row-label thinning for large matrices (main.js only sets this
+ * class when the row count is too large to show every label without
+ * overlap). The slot, row alignment, and `title` tooltip are preserved --
+ * only the visible text is removed, so row identity stays available on
+ * hover. */
+.clustered-row-label.label-text-hidden {
+  cursor: default;
+}
+
+.clustered-col-labels {
+  display: grid;
+  gap: 0;
+  background: #ffffff;
+  padding-top: 6px;
+}
+
+/* Each column-label cell occupies exactly one heat map column so it stays
+ * aligned with the grid. The text is rotated by an inner span and pinned
+ * to the top-center of the cell. */
+.clustered-col-label {
+  position: relative;
+  display: block;
+  height: 100%;
+  overflow: visible;
+}
+
+.clustered-col-label-text {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform-origin: top right;
+  transform: translateX(-100%) rotate(-45deg);
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: #344054;
+  white-space: nowrap;
+  line-height: 1;
+}

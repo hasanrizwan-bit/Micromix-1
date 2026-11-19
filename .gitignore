@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build output and caches
+dist/
+.vite/
+.cache/
+coverage/
+
+# Environment and secrets
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+*.code-workspace
