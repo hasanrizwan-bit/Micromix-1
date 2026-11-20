@@ -1,0 +1,178 @@
+{
+  "generator_version": "1.0.0",
+  "parameters": {
+    "seed": 20261119,
+    "n_orthogroups": 6000,
+    "n_strains": 8,
+    "n_replicates": 2,
+    "core_fraction": 0.85,
+    "paralog_fraction": 0.03,
+    "condition_responsive_fraction": 0.08,
+    "zero_inflated_fraction": 0.02,
+    "row_dropout_fraction": 0.005,
+    "lib_size_sdlog": 0.25,
+    "mean_log_median": 150.0,
+    "mean_log_sd": 1.5
+  },
+  "files": {
+    "orthology_reference.tsv": {
+      "kind": "orthology_reference",
+      "bytes": 4342308,
+      "sha256": "6a15097878a731c616b910e6e6d0460a9549329202be196e7c698b1dfe12c3ba",
+      "rows": 44653,
+      "orthogroups": 6000,
+      "strains": [
+        "Syn.S01",
+        "Syn.S02",
+        "Syn.S03",
+        "Syn.S04",
+        "Syn.S05",
+        "Syn.S06",
+        "Syn.S07",
+        "Syn.S08"
+      ],
+      "paralog_orthogroups": 177,
+      "core_orthogroups": 5075
+    },
+    "legacy_wide_S32.tsv": {
+      "rows": 6000,
+      "value_columns": 32,
+      "missing_values": 0,
+      "zero_fraction": 0.0119375,
+      "tpm_companion": {
+        "file": "legacy_wide_tpm_S32.tsv",
+        "bytes": 1257118,
+        "sha256": "d48edc1b5edc782463dc9b6882ca03f4e8b870c056c3ef2f414c781da0a826a6"
+      },
+      "kind": "legacy_wide",
+      "samples": 32,
+      "bytes": 806571,
+      "sha256": "bf422a48ffea820fc05e7496a3484febc0f0e465dba618e16f75ccdedea727b6",
+      "generate_seconds": 0.12
+    },
+    "orthology_expression_long_S32.tsv": {
+      "rows": 177721,
+      "zero_count_rows": 2240,
+      "dropped_measurements": 891,
+      "orthogroups": 6000,
+      "samples": 32,
+      "conditions": 2,
+      "kind": "orthology_expression_long",
+      "bytes": 16722488,
+      "sha256": "ba27eb205c1f50f5f1cc9aa1aa1c1bcbe8efaaeb4d8ff79d89c2750e3dbde041",
+      "generate_seconds": 0.47
+    },
+    "legacy_wide_S100.tsv": {
+      "rows": 6000,
+      "value_columns": 100,
+      "missing_values": 0,
+      "zero_fraction": 0.01197,
+      "tpm_companion": {
+        "file": "legacy_wide_tpm_S100.tsv",
+        "bytes": 3684071,
+        "sha256": "d9813f4e85701a4659c079f794c706c582db3b4092119933ab98180fc489107f"
+      },
+      "kind": "legacy_wide",
+      "samples": 100,
+      "bytes": 2275932,
+      "sha256": "97109c9039cfbcb01c3b9561c73301deb81e26e845994dc05843a171b1507159",
+      "generate_seconds": 0.36
+    },
+    "orthology_expression_long_S100.tsv": {
+      "rows": 555393,
+      "zero_count_rows": 7035,
+      "dropped_measurements": 2797,
+      "orthogroups": 6000,
+      "samples": 100,
+      "conditions": 7,
+      "kind": "orthology_expression_long",
+      "bytes": 52252917,
+      "sha256": "a0d9d0ca4763aa962f8e7b8d2d4b388ac20d92ce1100c2f7f92e91f46b0a495e",
+      "generate_seconds": 1.44
+    },
+    "legacy_wide_S250.tsv": {
+      "rows": 6000,
+      "value_columns": 250,
+      "missing_values": 0,
+      "zero_fraction": 0.012162,
+      "tpm_companion": {
+        "file": "legacy_wide_tpm_S250.tsv",
+        "bytes": 9035383,
+        "sha256": "60dd8ef414be068eec3b2099f879811758893be902b3fdfb07be17caed3ff2b7"
+      },
+      "kind": "legacy_wide",
+      "samples": 250,
+      "bytes": 5517623,
+      "sha256": "62151d17e01415b80bd1f3527e9ae76ebbfeef9b2fa3a20fb3111cbfc3e8b7bd",
+      "generate_seconds": 0.88
+    },
+    "orthology_expression_long_S250.tsv": {
+      "rows": 1388561,
+      "zero_count_rows": 17759,
+      "dropped_measurements": 6881,
+      "orthogroups": 6000,
+      "samples": 250,
+      "conditions": 16,
+      "kind": "orthology_expression_long",
+      "bytes": 130638935,
+      "sha256": "3e9b15ad6ea9c35db4e43653f4dc6905803dc08c701be2a4526c84e754fe91bf",
+      "generate_seconds": 3.5
+    },
+    "legacy_wide_S500.tsv": {
+      "rows": 6000,
+      "value_columns": 500,
+      "missing_values": 0,
+      "zero_fraction": 0.012023333333333334,
+      "tpm_companion": {
+        "file": "legacy_wide_tpm_S500.tsv",
+        "bytes": 17961090,
+        "sha256": "1a5cc3b7691862c4b88281b4087e4f091d0c3eda1d3e7793a2d0b772d857adaf"
+      },
+      "kind": "legacy_wide",
+      "samples": 500,
+      "bytes": 10935148,
+      "sha256": "db33b5919fa80338b0ac3d56e2216149073793c6eb9f7a39661a8256f2287cb9",
+      "generate_seconds": 1.76
+    },
+    "orthology_expression_long_S500.tsv": {
+      "rows": 2777044,
+      "zero_count_rows": 35399,
+      "dropped_measurements": 13796,
+      "orthogroups": 6000,
+      "samples": 500,
+      "conditions": 32,
+      "kind": "orthology_expression_long",
+      "bytes": 261270905,
+      "sha256": "d6a74405c072b24907cc49f3de5819470743b3e9e58e46876d3bde4174c8ac47",
+      "generate_seconds": 7.2
+    },
+    "legacy_wide_S1000.tsv": {
+      "rows": 6000,
+      "value_columns": 1000,
+      "missing_values": 0,
+      "zero_fraction": 0.012061833333333334,
+      "tpm_companion": {
+        "file": "legacy_wide_tpm_S1000.tsv",
+        "bytes": 35799123,
+        "sha256": "e5c455e1463b422a392f5072eb741ae6315a251d4d6da5982d015232a21a7510"
+      },
+      "kind": "legacy_wide",
+      "samples": 1000,
+      "bytes": 21744043,
+      "sha256": "aa02dfbb6d5c5a88479fdeb54edfdbdad0099b9563ad959f0a8d191572ba141a",
+      "generate_seconds": 3.59
+    },
+    "orthology_expression_long_S1000.tsv": {
+      "rows": 5553931,
+      "zero_count_rows": 70591,
+      "dropped_measurements": 27711,
+      "orthogroups": 6000,
+      "samples": 1000,
+      "conditions": 63,
+      "kind": "orthology_expression_long",
+      "bytes": 522518960,
+      "sha256": "f85545be98b99391dfbe49300ae10d745304079b94285a70d4fa1f75790407b1",
+      "generate_seconds": 14.19
+    }
+  }
+}

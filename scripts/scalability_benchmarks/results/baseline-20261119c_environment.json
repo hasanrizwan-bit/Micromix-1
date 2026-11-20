@@ -1,0 +1,51 @@
+{
+  "captured_at": "2026-11-20T01:02:59.017948Z",
+  "os": "Darwin 27.0.0 (27.0.1)",
+  "machine": "arm64",
+  "cpu": "Apple M1 Pro",
+  "cpu_count": 8,
+  "ram_bytes": 17179869184,
+  "python": "3.11.15",
+  "python_executable": "/Users/hasanrizwan/Micromix-1/Website/backend/venv/bin/python",
+  "numpy": "1.26.4",
+  "pandas": "2.2.3",
+  "pymongo": "3.12.1",
+  "scipy": "1.11.4",
+  "pyarrow": "24.0.0",
+  "node": "v26.0.0",
+  "mongod_binary": "db version v8.2.9",
+  "blas_env": {
+    "OMP_NUM_THREADS": null,
+    "OPENBLAS_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "VECLIB_MAXIMUM_THREADS": null,
+    "NUMEXPR_NUM_THREADS": null
+  },
+  "mem_limit_mb": 6144,
+  "git_head": "d0f53c052b299af1f7efb711ef20441f846075bd",
+  "git_branch": "feature/scalability",
+  "threadpools": [
+    {
+      "user_api": "blas",
+      "internal_api": "openblas",
+      "num_threads": 8,
+      "prefix": "libopenblas",
+      "filepath": "/Users/hasanrizwan/Micromix-1/Website/backend/venv/lib/python3.11/site-packages/numpy/.dylibs/libopenblas64_.0.dylib",
+      "version": "0.3.23.dev",
+      "threading_layer": "pthreads",
+      "architecture": "armv8"
+    }
+  ],
+  "numpy_blas": {
+    "name": "openblas64",
+    "found": true,
+    "version": "0.3.23.dev",
+    "detection method": "pkgconfig",
+    "include directory": "/opt/arm64-builds/include",
+    "lib directory": "/opt/arm64-builds/lib",
+    "openblas configuration": "USE_64BITINT=1 DYNAMIC_ARCH=1 DYNAMIC_OLDER= NO_CBLAS= NO_LAPACK= NO_LAPACKE= NO_AFFINITY=1 USE_OPENMP= SANDYBRIDGE MAX_THREADS=3",
+    "pc file directory": "/usr/local/lib/pkgconfig"
+  },
+  "mongodb_server": "8.2.9",
+  "mongodb_uri": "mongodb://127.0.0.1:27099/"
+}

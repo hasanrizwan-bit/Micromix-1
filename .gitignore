@@ -22,3 +22,6 @@ coverage/
 # OS / editor
 .DS_Store
 *.code-workspace
+
+# Scalability benchmarks: generated datasets, isolated MongoDB data, logs, raw outputs
+scripts/scalability_benchmarks/.work/
