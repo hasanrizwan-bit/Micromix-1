@@ -52,7 +52,16 @@ class FakeCollection:
                     # projection here is always {"_id":0, col:1, ...}; return
                     # only the requested keys (excluding _id).
                     keep = [k for k, v in projection.items() if v == 1]
-                    results.append({k: doc.get(k) for k in keep})
+                    if keep:
+                        results.append({k: doc.get(k) for k in keep})
+                    else:
+                        # Exclusion-only projection (e.g. {"_id": 0}), as
+                        # used by storage.get_reference_preview: return all
+                        # fields except the excluded ones (pymongo semantics).
+                        drop = {k for k, v in projection.items() if v == 0}
+                        results.append({k: copy.deepcopy(v)
+                                        for k, v in doc.items()
+                                        if k not in drop})
                 else:
                     results.append(copy.deepcopy(doc))
         return results
